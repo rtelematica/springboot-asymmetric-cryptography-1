@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8" />
+<title>Asymmetric Encryption</title>
+<script src="https://code.jquery.com/jquery-1.12.4.min.js"
+	integrity="sha256-ZosEbRLbNQzLpnKIkEdrPv7lOy9C27hHQ+Xp8a4MxAQ="
+	crossorigin="anonymous"></script>
+<script src="jsencrypt.min.js"></script>
+<script type="text/javascript">
+	$(document).ready(function() {
+		var publicKey = "";
+		var uniqueAppId = Math.round(Math.random() * 1000);
+		
+		$("#appIdDiv").append("<b>App Id:</b> " + uniqueAppId)
+
+		$.get("/key?appId=" + uniqueAppId, function(data) {
+			publicKey = data.data;
+			console.log("App Id: " + uniqueAppId);
+			
+			console.log("Public Key: ");
+			console.log(publicKey);
+			
+			console.log();
+			
+			$("#publicKeyDiv").append("<b>Public Key:</b> <br />" + publicKey.replace(/\n/g, "<br />"));
+		});
+
+		$("#loginButton").on("click", function(event) {
+			event.preventDefault();
+			
+			var encrypt = new JSEncrypt();
+			encrypt.setPublicKey(publicKey);
+			
+			var encryptedUsername = encrypt.encrypt($("#username").val());
+			var encryptedPassword = encrypt.encrypt($("#password").val());
+			
+			$.ajax({
+				  url: "/login",
+				  type:"POST",
+				  data: JSON.stringify({
+						appId: uniqueAppId,
+						username: encryptedUsername,
+						password: encryptedPassword
+					}),
+				  contentType:"application/json; charset=utf-8",
+				  dataType:"json",
+				  success: function(data){
+					  console.log(data)
+					  $("#responseDiv").append("Response from server: <br />"+data.data);
+				  }
+				});
+		});
+
+	});
+</script>
+</head>
+<body>
+
+	<h1>Asymmetric Encryption</h1>
+
+	<h2>Sending encrypted data</h2>
+
+	<form id="loginForm" onsubmit="return false">
+		<table>
+			<tr>
+				<td><b>Username:</b></td>
+				<td><input type="text" value="some user"
+					placeholder="Enter Username" name="username" id="username" required></td>
+			</tr>
+			<tr>
+				<td><b>Password:</b></td>
+				<td><input type="password" value="some password"
+					placeholder="Enter Password" name="password" id="password" required></td>
+			</tr>
+		</table>
+		<br />
+
+		<button id="loginButton">Login</button>
+	</form>
+
+	<br />
+
+	<div id="responseDiv"></div>
+
+	<br />
+	<hr />
+	<br />
+
+	<div id="appIdDiv"></div>
+	<div id="publicKeyDiv"></div>
+
+	<br />
+	<br />
+
+</body>
+</html>
+
